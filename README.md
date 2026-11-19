@@ -77,6 +77,7 @@ src/
     ├── editor.tsx    Rich comment editor with @mentions
     ├── text.ts       Card as plain-text context for the agent
     ├── home.tsx      Breeze tab
+    ├── icon.tsx      Breeze logo mark for tab labels
     └── style.css
 ```
 

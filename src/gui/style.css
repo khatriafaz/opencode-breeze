@@ -484,3 +484,6 @@
   display: flex;
   margin-top: 6px;
 }
+.breeze-icon {
+  flex-shrink: 0;
+}

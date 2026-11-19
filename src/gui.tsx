@@ -14,6 +14,7 @@ import { Breeze } from "./rpc"
 import { CardView } from "./gui/card"
 import { definition } from "./gui/definition"
 import { HomeView } from "./gui/home"
+import { BreezeIcon } from "./gui/icon"
 import { cardID, fromTab, tabID } from "./gui/links"
 import { createCards } from "./gui/state"
 import css from "./gui/style.css?inline"
@@ -129,6 +130,12 @@ export default Plugin.define({
               get title() {
                 return ctx.t("title")
               },
+              label: () => (
+                <span class="breeze-tab">
+                  <BreezeIcon />
+                  <span class="breeze-tab-name">{ctx.t("title")}</span>
+                </span>
+              ),
               closable: "compact",
             }
           : {
@@ -138,6 +145,7 @@ export default Plugin.define({
               },
               label: () => (
                 <span class="breeze-tab">
+                  <BreezeIcon />
                   <span class="breeze-tab-name">{cards.get(card)?.card?.name || ctx.t("card.untitled", { id: card })}</span>
                   <Show when={cards.unseen(card) > 0}>
                     <span class="breeze-dot" title={ctx.plural("card.new", cards.unseen(card))} />
