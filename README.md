@@ -13,6 +13,7 @@ Built for OpenCode `2.3.x` (`@opencode/plugin@2.3.0`). The GUI plugin API is exp
 | Card tab | Project, list, assignees, dates, time, tags, custom fields, description, checklists you can tick, and comments. |
 | Card actions | **Send to agent** button under the title (attaches the card to your prompt as a chip), move to another list, set or clear the due date, add or remove assignees, edit or delete your own comments. |
 | Comment editor | Bold, italic, strikethrough, code, lists, quote, link (⌘B, ⌘I, ⌘⇧X, ⌘E, ⌘K; ⌘↩ posts) and `@` mentions of project members, who get notified. Paste arrives as plain text. |
+| Session link | **Link to session** on a card (or **Send to agent**, which links too) pins it to the session. Linked cards show as a Breeze chip in the session header, next to the context and branch; click it to open the card, or pick one when several are linked. Links are stored per session on the server, copied to forks and removed with the session. |
 | Freshness | A visible card refreshes when shown, on window focus and every 2 minutes; hidden card tabs every 5 minutes. A dot on a card's tab marks comments you have not seen. |
 | **Breeze** tab | Connection status, open a card by link or id, and the cards linked in this session. From the side panel **+** menu or the **Open Breeze panel** command. |
 | Integration | **Breeze** in OpenCode's integrations, with a personal API token or `BREEZE_API_TOKEN`. |
@@ -69,7 +70,7 @@ because OpenCode's Git installer fails on packages with a `build` script.
 
 ```text
 src/
-├── index.ts          Server part: integration, Breeze REST client, RPC
+├── index.ts          Server part: integration, Breeze REST client, session links, RPC
 ├── rpc.ts            RPC contract (`breeze`) shared by the server and GUI parts
 ├── gui.tsx           ./gui-experimental entry: panel, link interception, command, menu item
 └── gui/
@@ -90,6 +91,8 @@ src/
 
 | Method | Input | Output |
 | --- | --- | --- |
+| `linked` | `{ sessionID }` | `{ sessionID, cardIDs }` |
+| `link` | `{ sessionID, cardID, linked }` | `{ sessionID, cardIDs }` |
 | `account` | `{}` | `{ connected, name?, email?, error? }` |
 | `connect` | `{ token }` | same as `account` |
 | `card` | `{ cardID }` | the card |

@@ -1,7 +1,7 @@
 import { createSignal } from "solid-js"
 import { createStore, produce, reconcile } from "solid-js/store"
 import type { MountedSession } from "@opencode/plugin/gui"
-import { Breeze, type Account, type Card } from "../rpc"
+import { Breeze, type Account, type Card, type Linked } from "../rpc"
 import { cardIDs } from "./links"
 
 export interface CardState {
@@ -34,6 +34,8 @@ const read = (): Record<number, number> => {
 export function createCards() {
   const [cards, setCards] = createStore<Record<number, CardState>>({})
   const [account, setAccount] = createSignal<Account>()
+  // Cards linked to each session, by session id.
+  const [links, setLinks] = createStore<Record<string, number[]>>({})
   // The newest comment id seen per card, kept across restarts.
   const [seen, setSeen] = createStore<Record<number, number>>(read())
 
@@ -99,6 +101,20 @@ export function createCards() {
       setSeen(id, last)
       localStorage.setItem(SEEN, JSON.stringify(seen))
     },
+    /** Card ids linked to the session. */
+    linked: (session: { id: string }) => links[session.id] ?? [],
+    async loadLinked(session: MountedSession) {
+      const result = (await api(session).linked({ sessionID: session.id }, where(session)).catch(() => undefined)) as
+        | Linked
+        | undefined
+      if (result) setLinks(result.sessionID, result.cardIDs)
+    },
+    async link(session: MountedSession, id: number, linked: boolean) {
+      const result = (await api(session).link({ sessionID: session.id, cardID: id, linked }, where(session))) as Linked
+      setLinks(result.sessionID, result.cardIDs)
+    },
+    /** Applies a `linked` event from the server. */
+    linkedChanged: (result: Linked) => setLinks(result.sessionID, result.cardIDs),
     account,
     async refreshAccount(session: MountedSession) {
       try {

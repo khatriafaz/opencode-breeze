@@ -74,6 +74,12 @@ export function CardView(props: {
     return ok
   }
 
+  const linked = () => props.cards.linked(props.session).includes(props.cardID)
+  const toggleLink = (on: boolean) =>
+    props.cards.link(props.session, props.cardID, on).catch((error: unknown) =>
+      ctx.toast.show({ variant: "error", title: ctx.t("toast.failed"), description: String(error) }),
+    )
+
   const send = (current: Card) => {
     props.screen.composer.attach({
       type: "note",
@@ -87,6 +93,8 @@ export function CardView(props: {
       href: current.url,
     })
     props.screen.composer.focus()
+    // Working on a card with the agent links it to the session.
+    if (!linked()) void toggleLink(true)
     ctx.toast.show({ variant: "success", title: ctx.t("card.sent"), duration: 2000 })
   }
 
@@ -214,6 +222,20 @@ export function CardView(props: {
           <ui.Button variant="neutral" size="small" icon="arrow-up" onClick={() => send(header.card)}>
             {ctx.t("card.send")}
           </ui.Button>
+          <Show
+            when={linked()}
+            fallback={
+              <ui.Button variant="ghost" size="small" icon="link" onClick={() => void toggleLink(true)}>
+                {ctx.t("card.link")}
+              </ui.Button>
+            }
+          >
+            <ui.Tooltip value={ctx.t("card.unlink")}>
+              <ui.Button variant="ghost" size="small" icon="check-small" onClick={() => void toggleLink(false)}>
+                {ctx.t("card.linked")}
+              </ui.Button>
+            </ui.Tooltip>
+          </Show>
         </div>
       </div>
     )

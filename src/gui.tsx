@@ -5,6 +5,7 @@ import {
   MenuItem,
   Panel,
   Plugin,
+  Slot,
   Style,
   createKeyed,
   type MountedSession,
@@ -45,6 +46,63 @@ export default Plugin.define({
       if (result.connected) ctx.toast.show({ variant: "success", title: ctx.t("toast.connected"), duration: 2000 })
       else ctx.toast.show({ variant: "error", title: result.error ?? ctx.t("error.not_connected") })
     }
+
+    // Cards linked to the routed session, kept current from the server.
+    createKeyed(
+      () => ctx.sessions.current(),
+      (session) => void cards.loadLinked(session),
+      { equals: (a, b) => a.key === b.key },
+    )
+    createKeyed(
+      () => ctx.sessions.current()?.server.client,
+      (client) => onCleanup(client.rpc(Breeze).events.on("linked", (event) => cards.linkedChanged(event.data as never))),
+    )
+    createEffect(() => {
+      const session = ctx.sessions.current()
+      if (session) for (const id of cards.linked(session)) void cards.ensure(session, id)
+    })
+
+    // The session header shows the linked card next to the other context chips; clicking it opens the card.
+    ctx.add(Slot, {
+      at: "session.header",
+      order: 25,
+      render: (input) => {
+        const ids = () => cards.linked(input.session)
+        const name = (id: number) => cards.get(id)?.card?.name || ctx.t("card.untitled", { id })
+        const label = () => (ids().length === 1 ? name(ids()[0]) : ctx.plural("header.many", ids().length))
+        const click = async () => {
+          const list = ids()
+          const id =
+            list.length === 1
+              ? list[0]
+              : await ctx.dialogs.select({
+                  title: ctx.t("header.pick"),
+                  options: list.map((value) => ({
+                    title: name(value),
+                    value,
+                    description: [cards.get(value)?.card?.project, cards.get(value)?.card?.stage].filter(Boolean).join(" · "),
+                  })),
+                })
+          if (id) open(input.session, id)
+        }
+        return (
+          <Show when={input.active && ids().length > 0}>
+            <button
+              type="button"
+              class="breeze-header-chip"
+              title={ids().length === 1 ? ctx.t("header.title", { name: name(ids()[0]) }) : ctx.t("header.pick")}
+              aria-label={ids().length === 1 ? ctx.t("header.title", { name: name(ids()[0]) }) : ctx.t("header.pick")}
+              onClick={() => void click()}
+            >
+              <BreezeIcon />
+              <Show when={!input.compact}>
+                <span class="breeze-header-chip-name">{label()}</span>
+              </Show>
+            </button>
+          </Show>
+        )
+      },
+    })
 
     // Your Breeze user id decides which comments you can edit.
     createKeyed(

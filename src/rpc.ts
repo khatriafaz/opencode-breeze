@@ -99,9 +99,37 @@ const failure = {
 
 const errors = { not_connected: { type: "object" }, breeze: failure } as const
 
+export interface Linked {
+  sessionID: string
+  /** Card ids linked to the session, in the order they were linked. */
+  cardIDs: number[]
+}
+
+const linked = {
+  type: "object",
+  properties: { sessionID: { type: "string" }, cardIDs: { type: "array", items: { type: "integer" } } },
+  required: ["sessionID", "cardIDs"],
+  additionalProperties: false,
+} as const
+
+const session = { sessionID: { type: "string", minLength: 1 } } as const
+
 export const Breeze = Rpc.define({
   id: "breeze",
   methods: {
+    linked: {
+      input: { type: "object", properties: session, required: ["sessionID"], additionalProperties: false },
+      output: linked,
+    },
+    link: {
+      input: {
+        type: "object",
+        properties: { ...session, ...cardID, linked: { type: "boolean" } },
+        required: ["sessionID", "cardID", "linked"],
+        additionalProperties: false,
+      },
+      output: linked,
+    },
     account: {
       input: { type: "object", properties: {}, additionalProperties: false },
       output: account,
@@ -207,6 +235,9 @@ export const Breeze = Rpc.define({
   events: {
     connected: {
       schema: account,
+    },
+    linked: {
+      schema: linked,
     },
   },
 })

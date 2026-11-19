@@ -1,5 +1,5 @@
 import { Plugin } from "@opencode/plugin"
-import { Breeze, type Account, type Card, type Comment, type Person, type TodoList } from "./rpc.js"
+import { Breeze, type Account, type Card, type Comment, type Linked, type Person, type TodoList } from "./rpc.js"
 
 const API = "https://api.breeze.pm"
 const APP = "https://app.breeze.pm"
@@ -176,7 +176,26 @@ export default Plugin.define({
       }
     }
 
+    // Cards linked to a session, stored under `session/<id>`.
+    const linked = async (sessionID: string): Promise<Linked> => ({
+      sessionID,
+      cardIDs: ((await ctx.storage.get(`session/${sessionID}`)) as number[] | undefined) ?? [],
+    })
+    const relink = async (sessionID: string, cardIDs: number[]) => {
+      if (cardIDs.length) await ctx.storage.set(`session/${sessionID}`, cardIDs as never)
+      else await ctx.storage.remove(`session/${sessionID}`).catch(() => {})
+      const result = { sessionID, cardIDs }
+      await registration.events.emit("linked", result as never)
+      return result
+    }
+
     const registration = await ctx.rpc.register(Breeze, {
+      linked: (input) => linked((input as { sessionID: string }).sessionID),
+      link: async (input) => {
+        const { sessionID, cardID, linked: on } = input as { sessionID: string; cardID: number; linked: boolean }
+        const current = (await linked(sessionID)).cardIDs.filter((id) => id !== cardID)
+        return relink(sessionID, on ? [...current, cardID] : current)
+      },
       account: () => account(),
       connect: async (input) => {
         const { token: key } = input as { token: string }
@@ -261,6 +280,26 @@ export default Plugin.define({
           return load(cardID)
         }),
     })
+
+    // A forked session keeps its source's links; a deleted session drops them.
+    const controller = new AbortController()
+    void (async () => {
+      for await (const event of ctx.event.subscribe({
+        types: ["session.forked", "session.deleted"],
+        signal: controller.signal,
+      })) {
+        const sessionID = event.data.sessionID
+        if (event.type === "session.deleted") await ctx.storage.remove(`session/${sessionID}`).catch(() => {})
+        if (event.type === "session.forked") {
+          const info = await ctx.session.get({ sessionID: sessionID as never }).catch(() => undefined)
+          const source = info?.fork?.sessionID
+          const cards = source ? (await linked(source)).cardIDs : []
+          if (cards.length && !(await linked(sessionID)).cardIDs.length) await relink(sessionID, cards)
+        }
+      }
+    })().catch(() => {})
+
+    return () => controller.abort()
   },
 })
 

@@ -482,8 +482,35 @@
 }
 .breeze-send {
   display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
   margin-top: 6px;
 }
 .breeze-icon {
   flex-shrink: 0;
+}
+.breeze-header-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  max-width: 240px;
+  height: 22px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: var(--v2-text-text-muted, inherit);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.breeze-header-chip:hover {
+  background: var(--v2-overlay-simple-overlay-hover, color-mix(in srgb, currentColor 8%, transparent));
+  color: var(--v2-text-text-base, inherit);
+}
+.breeze-header-chip-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
