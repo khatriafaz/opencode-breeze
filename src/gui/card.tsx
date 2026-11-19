@@ -189,15 +189,6 @@ export function CardView(props: {
         <div class="breeze-title-row">
           <h2 class="breeze-title">{header.card.name || ctx.t("card.untitled", { id: header.card.id })}</h2>
           <div class="breeze-actions">
-            <ui.Tooltip value={ctx.t("card.send")}>
-              <ui.IconButton
-                icon="arrow-up"
-                label={ctx.t("card.send")}
-                variant="ghost-muted"
-                size="small"
-                onClick={() => send(header.card)}
-              />
-            </ui.Tooltip>
             <ui.Tooltip value={ctx.t("card.refresh")}>
               <ui.IconButton
                 icon="refresh"
@@ -218,6 +209,11 @@ export function CardView(props: {
               />
             </ui.Tooltip>
           </div>
+        </div>
+        <div class="breeze-send">
+          <ui.Button variant="neutral" size="small" icon="arrow-up" onClick={() => send(header.card)}>
+            {ctx.t("card.send")}
+          </ui.Button>
         </div>
       </div>
     )

@@ -480,3 +480,7 @@
   border-radius: 50%;
   background: var(--icon-interactive-base, #4299ff);
 }
+.breeze-send {
+  display: flex;
+  margin-top: 6px;
+}

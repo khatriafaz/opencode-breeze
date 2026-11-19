@@ -11,7 +11,7 @@ Built for OpenCode `2.3.x` (`@opencode/plugin@2.3.0`). The GUI plugin API is exp
 | --- | --- |
 | Card link clicks | A click on `app.breeze.pm/cards/<id>` or `app.breeze.pm/projects/<p>/cards/<id>` opens the card in a side tab. ⌘-click (or any modifier) opens the browser as before. |
 | Card tab | Project, list, assignees, dates, time, tags, custom fields, description, checklists you can tick, and comments. |
-| Card actions | **Send to agent** (attaches the card to your prompt as a chip), move to another list, set or clear the due date, add or remove assignees, edit or delete your own comments. |
+| Card actions | **Send to agent** button under the title (attaches the card to your prompt as a chip), move to another list, set or clear the due date, add or remove assignees, edit or delete your own comments. |
 | Comment editor | Bold, italic, strikethrough, code, lists, quote, link (⌘B, ⌘I, ⌘⇧X, ⌘E, ⌘K; ⌘↩ posts) and `@` mentions of project members, who get notified. Paste arrives as plain text. |
 | Freshness | A visible card refreshes when shown, on window focus and every 2 minutes; hidden card tabs every 5 minutes. A dot on a card's tab marks comments you have not seen. |
 | **Breeze** tab | Connection status, open a card by link or id, and the cards linked in this session. From the side panel **+** menu or the **Open Breeze panel** command. |
