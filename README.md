@@ -1,0 +1,86 @@
+# opencode-breeze
+
+Open [Breeze](https://www.breeze.pm) cards in the OpenCode Desktop side panel. Click a card link anywhere in a session and
+the card opens in its own side tab, where you can tick checklist items and post comments.
+
+Built for OpenCode `2.3.x` (`@opencode/plugin@2.3.0`). The GUI plugin API is experimental.
+
+## What it adds
+
+| Part | Where |
+| --- | --- |
+| Card link clicks | A click on `app.breeze.pm/cards/<id>` or `app.breeze.pm/projects/<p>/cards/<id>` opens the card in a side tab. ⌘-click (or any modifier) opens the browser as before. |
+| Card tab | Project, stage, assignees, dates, time, tags, custom fields, description, checklists you can tick, comments, and a comment box (⌘↩ posts). |
+| **Breeze** tab | Connection status, open a card by link or id, and the cards linked in this session. From the side panel **+** menu or the **Open Breeze panel** command. |
+| Integration | **Breeze** in OpenCode's integrations, with a personal API token or `BREEZE_API_TOKEN`. |
+
+## Behavior
+
+- **Tabs:** each card is its own side tab (`card-<id>`). OpenCode stores open tabs per session.
+- **Token:** the server part holds it. Connect from the panel; the token goes to OpenCode's credential store. If
+  `BREEZE_API_TOKEN` is set in the server's environment, that works too.
+- **Teams:** accounts in several Breeze teams are handled by trying each team and remembering which one sees the card.
+- **Writes:** ticking a todo saves at once; a comment posts on **Post**. There is no undo from the panel.
+- **Click interception:** OpenCode sends http(s) links straight to the browser and has no plugin hook for them, so the
+  panel catches card-link clicks in the capture phase. That relies on the app's markup and may need fixing after an
+  OpenCode update. The **Breeze** tab's linked-cards list works without it.
+
+## Install
+
+```bash
+opencode plugin add "git+https://github.com/khatriafaz/opencode-breeze.git"
+```
+
+OpenCode Desktop loads GUI plugins only from the global config. The built panel bundle ships in the repo, so there is no
+build step.
+
+## Develop
+
+```bash
+bun install
+bun run bundle     # dist/gui-experimental.cjs
+bun run dev        # rebuild on change
+bun run typecheck
+```
+
+Load a clone from the global config:
+
+```jsonc
+// ~/.config/opencode/opencode.json
+{ "plugins": ["/absolute/path/to/opencode-breeze"] }
+```
+
+Commit `dist/` after GUI changes; Git installs use the committed bundle. The script is named `bundle`, not `build`,
+because OpenCode's Git installer fails on packages with a `build` script.
+
+## Layout
+
+```text
+src/
+├── index.ts          Server part: integration, Breeze REST client, RPC
+├── rpc.ts            RPC contract (`breeze`) shared by the server and GUI parts
+├── gui.tsx           ./gui-experimental entry: panel, link interception, command, menu item
+└── gui/
+    ├── definition.ts i18n
+    ├── links.ts      Card link parsing
+    ├── state.ts      Card cache over RPC, session link scan
+    ├── card.tsx      Card tab
+    ├── home.tsx      Breeze tab
+    └── style.css
+```
+
+## RPC
+
+`POST /api/rpc/breeze/<method>?location[directory]=<dir>` with body `{ "input": { ... } }`.
+
+| Method | Input | Output |
+| --- | --- | --- |
+| `account` | `{}` | `{ connected, name?, email?, error? }` |
+| `connect` | `{ token }` | same as `account` |
+| `card` | `{ cardID }` | the card |
+| `todo` | `{ cardID, todoListID, todoID, done }` | the card |
+| `comment` | `{ cardID, text }` | the card |
+
+## License
+
+MIT
