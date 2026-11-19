@@ -2,6 +2,7 @@ import { For, Show, createEffect, createSignal } from "solid-js"
 import { usePlugin, type MountedSession } from "@opencode/plugin/gui"
 import type { Card, Comment, TodoList } from "../rpc"
 import type { definition } from "./definition"
+import { RichEditor } from "./editor"
 import type { Cards } from "./state"
 
 const day = (iso?: string) =>
@@ -248,38 +249,21 @@ export function CardView(props: {
   }
 
   function Composer() {
-    const [draft, setDraft] = createSignal("")
     const [busy, setBusy] = createSignal(false)
-    const post = async () => {
-      const text = draft().trim()
-      if (!text || busy()) return
+    const post = async (html: string) => {
       setBusy(true)
-      const ok = await props.cards.comment(props.session, props.cardID, text)
+      const ok = await props.cards.comment(props.session, props.cardID, html)
       setBusy(false)
-      if (!ok) return ctx.toast.show({ variant: "error", title: ctx.t("toast.failed") })
-      setDraft("")
+      if (!ok) {
+        ctx.toast.show({ variant: "error", title: ctx.t("toast.failed") })
+        return false
+      }
       ctx.toast.show({ variant: "success", title: ctx.t("toast.posted"), duration: 2000 })
+      return true
     }
     return (
       <div class="breeze-composer">
-        <textarea
-          class="breeze-textarea"
-          aria-label={ctx.t("comment.label")}
-          placeholder={ctx.t("comment.placeholder")}
-          rows={2}
-          value={draft()}
-          disabled={busy()}
-          onInput={(event) => setDraft(event.currentTarget.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
-              event.preventDefault()
-              void post()
-            }
-          }}
-        />
-        <ui.Button variant="contrast" size="small" disabled={!draft().trim()} busy={busy()} onClick={() => void post()}>
-          {ctx.t("comment.post")}
-        </ui.Button>
+        <RichEditor label={ctx.t("comment.label")} placeholder={ctx.t("comment.placeholder")} busy={busy()} onSubmit={post} />
       </div>
     )
   }
