@@ -101,11 +101,12 @@ export default Plugin.define({
       const { where, raw } = await locate(cardID)
       const base = `/projects/${where.projectID}/cards/${cardID}`
       const team = where.team
-      const [comments, lists, stages, project] = await Promise.all([
+      const [comments, lists, stages, project, people] = await Promise.all([
         call<Raw[]>(`${base}/comments.json`, { team }).catch(() => []),
         call<Raw[]>(`${base}/todo_lists.json`, { team }).catch(() => undefined),
         call<Raw[]>(`/projects/${where.projectID}/stages.json`, { team }).catch(() => []),
         call(`/projects/${where.projectID}.json`, { team }).catch(() => undefined),
+        call<Raw[]>(`/projects/${where.projectID}/people.json`, { team }).catch(() => []),
       ])
       const todoLists: TodoList[] = lists
         ? lists.map((list) => ({
@@ -123,6 +124,9 @@ export default Plugin.define({
         description: raw.description ?? "",
         project: project?.name,
         stage: stages.find((stage) => stage.id === raw.stage_id)?.name,
+        stageID: raw.stage_id ?? undefined,
+        stages: stages.map((stage) => ({ id: stage.id, name: stage.name ?? "" })),
+        people: (people.map(person).filter(Boolean) as Person[]).sort((a, b) => a.name.localeCompare(b.name)),
         color: raw.color || undefined,
         startDate: raw.startdate ?? undefined,
         dueDate: raw.duedate ?? undefined,
@@ -153,7 +157,7 @@ export default Plugin.define({
       if (!key && !(await token())) return { connected: false }
       try {
         const info = key ? await call("/me.json", { key }) : await self()
-        return { connected: true, name: info.name ?? undefined, email: info.email ?? undefined }
+        return json<Account>({ connected: true, id: info.id, name: info.name ?? undefined, email: info.email ?? undefined })
       } catch (error) {
         if (error instanceof BreezeError && error.status === 401)
           return { connected: false, error: "Breeze rejected the token." }
@@ -202,13 +206,58 @@ export default Plugin.define({
         }),
       comment: (input, context) =>
         guard(context, async () => {
-          const { cardID, text } = input as { cardID: number; text: string }
+          const { cardID, text, mentionIDs } = input as { cardID: number; text: string; mentionIDs?: number[] }
           const { where } = await locate(cardID)
           await call(`/projects/${where.projectID}/cards/${cardID}/comments.json`, {
             method: "POST",
-            body: { comment: text },
+            body: { comment: text, ...(mentionIDs?.length ? { mention_ids: mentionIDs } : {}) },
             team: where.team,
           })
+          return load(cardID)
+        }),
+      editComment: (input, context) =>
+        guard(context, async () => {
+          const { cardID, commentID, text, mentionIDs } = input as {
+            cardID: number
+            commentID: number
+            text: string
+            mentionIDs?: number[]
+          }
+          const { where } = await locate(cardID)
+          await call(`/projects/${where.projectID}/cards/${cardID}/comments/${commentID}.json`, {
+            method: "PUT",
+            body: { comment: text, ...(mentionIDs?.length ? { mention_ids: mentionIDs } : {}) },
+            team: where.team,
+          })
+          return load(cardID)
+        }),
+      deleteComment: (input, context) =>
+        guard(context, async () => {
+          const { cardID, commentID } = input as { cardID: number; commentID: number }
+          const { where } = await locate(cardID)
+          await call(`/projects/${where.projectID}/cards/${cardID}/comments/${commentID}.json`, {
+            method: "DELETE",
+            team: where.team,
+          })
+          return load(cardID)
+        }),
+      update: (input, context) =>
+        guard(context, async () => {
+          const { cardID, stageID, dueDate } = input as { cardID: number; stageID?: number; dueDate?: string | null }
+          const { where } = await locate(cardID)
+          const body: Raw = {}
+          if (stageID !== undefined) body.stage_id = stageID
+          if (dueDate !== undefined) body.duedate = dueDate
+          await call(`/projects/${where.projectID}/cards/${cardID}.json`, { method: "PUT", body, team: where.team })
+          return load(cardID)
+        }),
+      assign: (input, context) =>
+        guard(context, async () => {
+          const { cardID, add, remove } = input as { cardID: number; add?: string[]; remove?: number[] }
+          const { where } = await locate(cardID)
+          const base = `/projects/${where.projectID}/cards/${cardID}/people`
+          if (add?.length) await call(`${base}.json`, { method: "POST", body: { invitees: add }, team: where.team })
+          for (const userID of remove ?? []) await call(`${base}/${userID}.json`, { method: "DELETE", team: where.team })
           return load(cardID)
         }),
     })

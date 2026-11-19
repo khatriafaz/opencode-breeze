@@ -1,5 +1,15 @@
-import { Match, Switch, onCleanup } from "solid-js"
-import { Command, MenuItem, Panel, Plugin, Style, createKeyed, type MountedSession, type PanelTab } from "@opencode/plugin/gui"
+import { Match, Show, Switch, createEffect, onCleanup } from "solid-js"
+import {
+  Command,
+  LinkHandler,
+  MenuItem,
+  Panel,
+  Plugin,
+  Style,
+  createKeyed,
+  type MountedSession,
+  type PanelTab,
+} from "@opencode/plugin/gui"
 import { Breeze } from "./rpc"
 import { CardView } from "./gui/card"
 import { definition } from "./gui/definition"
@@ -34,6 +44,44 @@ export default Plugin.define({
       if (result.connected) ctx.toast.show({ variant: "success", title: ctx.t("toast.connected"), duration: 2000 })
       else ctx.toast.show({ variant: "error", title: result.error ?? ctx.t("error.not_connected") })
     }
+
+    // Your Breeze user id decides which comments you can edit.
+    createKeyed(
+      () => ctx.sessions.current(),
+      (session) => void cards.refreshAccount(session),
+      { equals: (a, b) => a.server.client === b.server.client },
+    )
+
+    // Restored card tabs load their card, so their titles show the card's name.
+    createEffect(() => {
+      const session = ctx.sessions.current()
+      if (!session) return
+      for (const tab of ctx.layout.stored(session)) {
+        const id = fromTab(tab)
+        if (id) void cards.ensure(session, id)
+      }
+    })
+
+    // Cards in hidden tabs refresh every five minutes, so their tabs can show new comments.
+    const poll = setInterval(() => {
+      const session = ctx.sessions.current()
+      if (!session || !cards.account()?.connected) return
+      for (const tab of ctx.layout.stored(session)) {
+        const id = fromTab(tab)
+        if (id && ctx.layout.state(key(tab), session) !== "visible") void cards.load(session, id)
+      }
+    }, 5 * 60_000)
+    onCleanup(() => clearInterval(poll))
+
+    // Composer chips from "Send to agent" open their card.
+    ctx.add(LinkHandler, {
+      match: (link) => link.origin === ctx.id && cardID(link.href) !== undefined,
+      open: (link) => {
+        const session = ctx.sessions.current()
+        const id = cardID(link.href)
+        if (session && id) open(session, id)
+      },
+    })
 
     // Reload open cards once the token changes, from this window or another.
     createKeyed(
@@ -88,6 +136,14 @@ export default Plugin.define({
               get title() {
                 return cards.get(card)?.card?.name || ctx.t("card.untitled", { id: card })
               },
+              label: () => (
+                <span class="breeze-tab">
+                  <span class="breeze-tab-name">{cards.get(card)?.card?.name || ctx.t("card.untitled", { id: card })}</span>
+                  <Show when={cards.unseen(card) > 0}>
+                    <span class="breeze-dot" title={ctx.plural("card.new", cards.unseen(card))} />
+                  </Show>
+                </span>
+              ),
               closable: "hover",
             }
       tabs.set(id, created)
@@ -111,7 +167,13 @@ export default Plugin.define({
         <Switch>
           <Match when={fromTab(props.tab.id)}>
             {(id) => (
-              <CardView cards={cards} session={props.session} cardID={id()} onConnect={() => void connect(props.session)} />
+              <CardView
+                cards={cards}
+                session={props.session}
+                screen={props.screen}
+                cardID={id()}
+                onConnect={() => void connect(props.session)}
+              />
             )}
           </Match>
           <Match when={props.tab.id === HOME}>

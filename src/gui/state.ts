@@ -20,16 +20,32 @@ const describe = (error: unknown): CardState["error"] => {
   return { code: raw.includes("not_connected") ? "not_connected" : "other", message: text }
 }
 
+const SEEN = "opencode-breeze:seen"
+
+const read = (): Record<number, number> => {
+  try {
+    return JSON.parse(localStorage.getItem(SEEN) ?? "{}")
+  } catch {
+    return {}
+  }
+}
+
 /** Card cache keyed by card id. Cards are the same in every session; the server part holds the token. */
 export function createCards() {
   const [cards, setCards] = createStore<Record<number, CardState>>({})
   const [account, setAccount] = createSignal<Account>()
+  // The newest comment id seen per card, kept across restarts.
+  const [seen, setSeen] = createStore<Record<number, number>>(read())
 
   const run = async (id: number, call: () => Promise<unknown>) => {
     setCards(id, (current) => ({ ...current, loading: true, error: undefined }))
     try {
       const card = (await call()) as Card
       setCards(id, reconcile({ card, loading: false }))
+      if (seen[id] === undefined) {
+        setSeen(id, Math.max(0, ...card.comments.map((comment) => comment.id)))
+        localStorage.setItem(SEEN, JSON.stringify(seen))
+      }
       return true
     } catch (error) {
       setCards(id, (current) => ({ card: current?.card, loading: false, error: describe(error) }))
@@ -57,8 +73,32 @@ export function createCards() {
       )
       return run(id, () => api(session).todo({ cardID: id, todoListID, todoID, done }, where(session)))
     },
-    comment: (session: MountedSession, id: number, text: string) =>
-      run(id, () => api(session).comment({ cardID: id, text }, where(session))),
+    comment: (session: MountedSession, id: number, text: string, mentionIDs: number[]) =>
+      run(id, () => api(session).comment({ cardID: id, text, mentionIDs }, where(session))),
+    editComment: (session: MountedSession, id: number, commentID: number, text: string, mentionIDs: number[]) =>
+      run(id, () => api(session).editComment({ cardID: id, commentID, text, mentionIDs }, where(session))),
+    deleteComment: (session: MountedSession, id: number, commentID: number) =>
+      run(id, () => api(session).deleteComment({ cardID: id, commentID }, where(session))),
+    update: (session: MountedSession, id: number, patch: { stageID?: number; dueDate?: string | null }) =>
+      run(id, () => api(session).update({ cardID: id, ...patch }, where(session))),
+    assign: (session: MountedSession, id: number, change: { add?: string[]; remove?: number[] }) =>
+      run(id, () => api(session).assign({ cardID: id, ...change }, where(session))),
+    /** Comments newer than the last ones seen in this card's tab. */
+    unseen(id: number) {
+      const card = cards[id]?.card
+      const last = seen[id]
+      if (!card || last === undefined) return 0
+      return card.comments.filter((comment) => comment.id > last).length
+    },
+    /** Marks every loaded comment seen. A card seen for the first time starts with nothing new. */
+    markSeen(id: number) {
+      const card = cards[id]?.card
+      if (!card) return
+      const last = Math.max(0, ...card.comments.map((comment) => comment.id))
+      if (seen[id] === last) return
+      setSeen(id, last)
+      localStorage.setItem(SEEN, JSON.stringify(seen))
+    },
     account,
     async refreshAccount(session: MountedSession) {
       try {

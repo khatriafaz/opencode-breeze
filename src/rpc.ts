@@ -32,6 +32,11 @@ export interface CustomField {
   value: string
 }
 
+export interface Stage {
+  id: number
+  name: string
+}
+
 export interface Card {
   id: number
   projectID: number
@@ -41,6 +46,11 @@ export interface Card {
   description: string
   project?: string
   stage?: string
+  stageID?: number
+  /** The project's lists, in board order. */
+  stages: Stage[]
+  /** The project's members, for assigning and mentioning. */
+  people: Person[]
   color?: string
   startDate?: string
   dueDate?: string
@@ -57,6 +67,8 @@ export interface Card {
 
 export interface Account {
   connected: boolean
+  /** Your Breeze user id. */
+  id?: number
   name?: string
   email?: string
   /** Set when the token was rejected or Breeze could not be reached. */
@@ -68,6 +80,7 @@ const account = {
   type: "object",
   properties: {
     connected: { type: "boolean" },
+    id: { type: "integer" },
     name: { type: "string" },
     email: { type: "string" },
     error: { type: "string" },
@@ -125,8 +138,66 @@ export const Breeze = Rpc.define({
     comment: {
       input: {
         type: "object",
-        properties: { ...cardID, text: { type: "string", minLength: 1 } },
+        properties: {
+          ...cardID,
+          text: { type: "string", minLength: 1 },
+          mentionIDs: { type: "array", items: { type: "integer" } },
+        },
         required: ["cardID", "text"],
+        additionalProperties: false,
+      },
+      output: card,
+      errors,
+    },
+    editComment: {
+      input: {
+        type: "object",
+        properties: {
+          ...cardID,
+          commentID: { type: "integer" },
+          text: { type: "string", minLength: 1 },
+          mentionIDs: { type: "array", items: { type: "integer" } },
+        },
+        required: ["cardID", "commentID", "text"],
+        additionalProperties: false,
+      },
+      output: card,
+      errors,
+    },
+    deleteComment: {
+      input: {
+        type: "object",
+        properties: { ...cardID, commentID: { type: "integer" } },
+        required: ["cardID", "commentID"],
+        additionalProperties: false,
+      },
+      output: card,
+      errors,
+    },
+    update: {
+      input: {
+        type: "object",
+        properties: {
+          ...cardID,
+          stageID: { type: "integer" },
+          /** `YYYY-MM-DD`, or null to clear. */
+          dueDate: { type: ["string", "null"] },
+        },
+        required: ["cardID"],
+        additionalProperties: false,
+      },
+      output: card,
+      errors,
+    },
+    assign: {
+      input: {
+        type: "object",
+        properties: {
+          ...cardID,
+          add: { type: "array", items: { type: "string" } },
+          remove: { type: "array", items: { type: "integer" } },
+        },
+        required: ["cardID"],
         additionalProperties: false,
       },
       output: card,

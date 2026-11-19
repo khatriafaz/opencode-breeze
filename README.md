@@ -10,7 +10,10 @@ Built for OpenCode `2.3.x` (`@opencode/plugin@2.3.0`). The GUI plugin API is exp
 | Part | Where |
 | --- | --- |
 | Card link clicks | A click on `app.breeze.pm/cards/<id>` or `app.breeze.pm/projects/<p>/cards/<id>` opens the card in a side tab. ⌘-click (or any modifier) opens the browser as before. |
-| Card tab | Project, stage, assignees, dates, time, tags, custom fields, description, checklists you can tick, comments, and a rich comment editor: bold, italic, strikethrough, code, lists, quote, link (⌘B, ⌘I, ⌘⇧X, ⌘E, ⌘K; ⌘↩ posts). Paste arrives as plain text. |
+| Card tab | Project, list, assignees, dates, time, tags, custom fields, description, checklists you can tick, and comments. |
+| Card actions | **Send to agent** (attaches the card to your prompt as a chip), move to another list, set or clear the due date, add or remove assignees, edit or delete your own comments. |
+| Comment editor | Bold, italic, strikethrough, code, lists, quote, link (⌘B, ⌘I, ⌘⇧X, ⌘E, ⌘K; ⌘↩ posts) and `@` mentions of project members, who get notified. Paste arrives as plain text. |
+| Freshness | A visible card refreshes when shown, on window focus and every 2 minutes; hidden card tabs every 5 minutes. A dot on a card's tab marks comments you have not seen. |
 | **Breeze** tab | Connection status, open a card by link or id, and the cards linked in this session. From the side panel **+** menu or the **Open Breeze panel** command. |
 | Integration | **Breeze** in OpenCode's integrations, with a personal API token or `BREEZE_API_TOKEN`. |
 
@@ -20,7 +23,10 @@ Built for OpenCode `2.3.x` (`@opencode/plugin@2.3.0`). The GUI plugin API is exp
 - **Token:** the server part holds it. Connect from the panel; the token goes to OpenCode's credential store. If
   `BREEZE_API_TOKEN` is set in the server's environment, that works too.
 - **Teams:** accounts in several Breeze teams are handled by trying each team and remembering which one sees the card.
-- **Writes:** ticking a todo saves at once; a comment posts on **Post**. There is no undo from the panel.
+- **Writes:** ticks, list moves, dates and assignees save at once; comments post on **Post**; deleting a comment asks
+  first. There is no undo from the panel.
+- **Send to agent:** the chip carries the card's facts, description, checklists and latest 5 comments, quoted. The agent
+  gets no Breeze tools.
 - **Click interception:** OpenCode sends http(s) links straight to the browser and has no plugin hook for them, so the
   panel catches card-link clicks in the capture phase. That relies on the app's markup and may need fixing after an
   OpenCode update. The **Breeze** tab's linked-cards list works without it.
@@ -65,7 +71,8 @@ src/
     ├── links.ts      Card link parsing
     ├── state.ts      Card cache over RPC, session link scan
     ├── card.tsx      Card tab
-    ├── editor.tsx    Rich comment editor
+    ├── editor.tsx    Rich comment editor with @mentions
+    ├── text.ts       Card as plain-text context for the agent
     ├── home.tsx      Breeze tab
     └── style.css
 ```
@@ -80,7 +87,11 @@ src/
 | `connect` | `{ token }` | same as `account` |
 | `card` | `{ cardID }` | the card |
 | `todo` | `{ cardID, todoListID, todoID, done }` | the card |
-| `comment` | `{ cardID, text }` | the card |
+| `comment` | `{ cardID, text, mentionIDs? }` | the card |
+| `editComment` | `{ cardID, commentID, text, mentionIDs? }` | the card |
+| `deleteComment` | `{ cardID, commentID }` | the card |
+| `update` | `{ cardID, stageID?, dueDate? }` (`YYYY-MM-DD` or `null`) | the card |
+| `assign` | `{ cardID, add?: emails, remove?: userIDs }` | the card |
 
 ## License
 

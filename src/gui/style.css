@@ -350,3 +350,133 @@
 .breeze-hint {
   line-height: 1.5;
 }
+.breeze-stage-menu {
+  display: inline-flex;
+}
+.breeze-stage-menu button {
+  height: 22px;
+  font-size: 11.5px;
+}
+.breeze-person {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding-right: 2px;
+}
+.breeze-chip-remove {
+  display: inline-grid;
+  place-items: center;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  opacity: 0;
+  cursor: pointer;
+}
+.breeze-person:hover .breeze-chip-remove,
+.breeze-due:hover .breeze-chip-remove,
+.breeze-chip-remove:focus-visible {
+  opacity: 0.7;
+}
+.breeze-chip-remove:hover {
+  opacity: 1;
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+.breeze-people {
+  align-items: center;
+}
+.breeze-due {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.breeze-date {
+  position: relative;
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 0 4px;
+  margin-left: -4px;
+}
+.breeze-date:hover {
+  background: color-mix(in srgb, currentColor 8%, transparent);
+}
+/* The native date input sits invisibly over the label and opens its picker on click. */
+.breeze-date input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.breeze-date input::-webkit-calendar-picker-indicator {
+  position: absolute;
+  inset: 0;
+  width: auto;
+  height: auto;
+  cursor: pointer;
+}
+.breeze-comment-meta {
+  position: relative;
+}
+.breeze-comment-menu {
+  margin-left: auto;
+  opacity: 0;
+}
+.breeze-comment:hover .breeze-comment-menu,
+.breeze-comment-menu:focus-within {
+  opacity: 1;
+}
+.breeze-editor {
+  position: relative;
+}
+.breeze-mentions {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: calc(100% + 4px);
+  z-index: 10;
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, currentColor 14%, transparent);
+  background: var(--surface-raised-stronger-non-alpha, var(--background-base, #fff));
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.14);
+}
+.breeze-mention {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 5px 8px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+.breeze-mention-on {
+  background: color-mix(in srgb, currentColor 9%, transparent);
+}
+.atwho-inserted {
+  color: var(--text-interactive-base, #4299ff);
+}
+.breeze-editor-foot {
+  gap: 6px;
+}
+.breeze-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.breeze-tab-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.breeze-dot {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--icon-interactive-base, #4299ff);
+}
