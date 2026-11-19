@@ -1,6 +1,6 @@
 {
   "name": "opencode-breeze",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Open Breeze cards in the OpenCode Desktop side panel: tick todos and post comments without leaving the session.",
   "license": "MIT",

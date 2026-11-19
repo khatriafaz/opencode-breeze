@@ -37,11 +37,11 @@ Built for OpenCode `2.3.x` (`@opencode/plugin@2.3.0`). The GUI plugin API is exp
 ## Install
 
 ```bash
-opencode plugin add "git+https://github.com/khatriafaz/opencode-breeze.git#v0.1.0"
+opencode plugin add "git+https://github.com/khatriafaz/opencode-breeze.git#v0.1.1"
 ```
 
 This adds the plugin to your global `~/.config/opencode/opencode.json`. OpenCode Desktop loads GUI plugins only from
-the global config. The built panel bundle ships in the repo, so there is no build step. Drop `#v0.1.0` to track `main`.
+the global config. The built panel bundle ships in the repo, so there is no build step. Drop `#v0.1.1` to track `main`.
 
 Then connect Breeze: open **Breeze** from the side panel **+** menu and click **Connect Breeze**, or set
 `BREEZE_API_TOKEN` for the OpenCode server. Your token is on [app.breeze.pm/profile](https://app.breeze.pm/profile).
