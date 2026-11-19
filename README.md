@@ -30,6 +30,9 @@ Built for OpenCode `2.3.x` (`@opencode/plugin@2.3.0`). The GUI plugin API is exp
 - **Click interception:** OpenCode sends http(s) links straight to the browser and has no plugin hook for them, so the
   panel catches card-link clicks in the capture phase. That relies on the app's markup and may need fixing after an
   OpenCode update. The **Breeze** tab's linked-cards list works without it.
+- **Logo:** tabs draw the Breeze mark through their label. The **+** menu and New tab list only take built-in icon
+  names, so the panel swaps the icon on rows titled exactly "Breeze" in the DOM. Like the link interception, it may
+  need fixing after an OpenCode update; if it breaks, those rows show the built-in checklist icon.
 
 ## Install
 
@@ -77,7 +80,7 @@ src/
     ├── editor.tsx    Rich comment editor with @mentions
     ├── text.ts       Card as plain-text context for the agent
     ├── home.tsx      Breeze tab
-    ├── icon.tsx      Breeze logo mark for tab labels
+    ├── icon.tsx      Breeze logo for tabs and launcher rows
     └── style.css
 ```
 

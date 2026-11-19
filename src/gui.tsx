@@ -14,7 +14,7 @@ import { Breeze } from "./rpc"
 import { CardView } from "./gui/card"
 import { definition } from "./gui/definition"
 import { HomeView } from "./gui/home"
-import { BreezeIcon } from "./gui/icon"
+import { BreezeIcon, brandLaunchers } from "./gui/icon"
 import { cardID, fromTab, tabID } from "./gui/links"
 import { createCards } from "./gui/state"
 import css from "./gui/style.css?inline"
@@ -117,6 +117,8 @@ export default Plugin.define({
     }
     document.addEventListener("click", click, true)
     onCleanup(() => document.removeEventListener("click", click, true))
+
+    onCleanup(brandLaunchers(() => ctx.t("title")))
 
     const tabs = new Map<string, PanelTab>()
     const tab = (id: string): PanelTab => {
